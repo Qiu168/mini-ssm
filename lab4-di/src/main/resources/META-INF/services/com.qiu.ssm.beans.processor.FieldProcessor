@@ -1,0 +1,2 @@
+com.qiu.ssm.beans.processor.AutowiredFieldProcessor
+com.qiu.ssm.beans.processor.ValueFieldProcessor

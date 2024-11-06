@@ -20,7 +20,7 @@ public class AfterThrowingAdviceInterceptor extends AbstractAspectAdvice impleme
 
     public AfterThrowingAdviceInterceptor(Method aspectMethod, Object aspectTarget, List<Class<? extends Throwable>> exceptions) {
         super(aspectMethod, aspectTarget);
-        this.exceptions=exceptions;
+        this.exceptions = exceptions;
     }
 
     @Override
@@ -30,21 +30,23 @@ public class AfterThrowingAdviceInterceptor extends AbstractAspectAdvice impleme
             return mi.proceed();
         } catch (InvocationTargetException e) {
             //异常捕捉中调用通知方法
+            Throwable throwable = e;
             for (Class<? extends Throwable> exception : exceptions) {
-                if(getCauseClass(e)==exception){
+                throwable = getCause(e);
+                if (throwable.getClass() == exception) {
                     invokeAdviceMethod(mi, null, e.getCause());
                     break;
                 }
             }
-            throw e;
+            throw throwable;
         }
     }
 
-    private Class<? extends Throwable> getCauseClass(Throwable e) {
-        while(e.getClass()== InvocationTargetException.class){
-            e=e.getCause();
+    private Throwable getCause(Throwable e) {
+        while (e.getClass() == InvocationTargetException.class) {
+            e = e.getCause();
         }
-        return e.getClass();
+        return e;
     }
 
 }

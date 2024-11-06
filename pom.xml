@@ -14,6 +14,7 @@
         <module>lab3-ioc</module>
         <module>lab4-di</module>
         <module>lab5-aop</module>
+        <module>lab6-aop-spring</module>
     </modules>
 
     <properties>
@@ -22,6 +23,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
+        <!-- CGLib -->
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>2.2.2</version>
+        </dependency>
         <!--   yaml     -->
         <dependency>
             <groupId>org.yaml</groupId>

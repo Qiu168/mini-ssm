@@ -1,14 +1,8 @@
 package com.qiu.ssm.annotation.aop;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
 
-/**
- * @author _qiu
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Around {
+public @interface AfterReturning {
     Class<? extends Annotation>[] annotation() default {};
     Class<? extends Annotation>[] within() default {};
-
 }

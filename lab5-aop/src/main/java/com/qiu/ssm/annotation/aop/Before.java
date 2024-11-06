@@ -9,5 +9,5 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface Before {
     Class<? extends Annotation>[] annotation() default {};
-    Class<?>[] within() default {};
+    Class<? extends Annotation>[] within() default {};
 }

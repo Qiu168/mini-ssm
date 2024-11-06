@@ -8,6 +8,7 @@ import com.qiu.ssm.resource.DefaultResourceLoader;
 import com.qiu.ssm.resource.ResourceHolder;
 import com.qiu.ssm.resource.ResourceLoader;
 import com.qiu.ssm.util.Assert;
+import com.qiu.ssm.util.ContextUtil;
 import com.qiu.ssm.util.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class ApplicationContext extends DefaultBeanFactory {
             scanPackage=mainClass.getPackage().getName();
         }
         context.refresh(scanPackage);
+        ContextUtil.setApplicationContext(context);
         return context;
     }
     protected void refresh(String scanPackage) throws Exception {

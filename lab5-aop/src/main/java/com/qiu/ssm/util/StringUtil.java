@@ -10,7 +10,7 @@ public abstract class StringUtil {
         if (str != null){
             str = str.trim();
         }
-        return null==str||"".equals(str);
+        return null==str|| str.isEmpty();
     }
 
     /**

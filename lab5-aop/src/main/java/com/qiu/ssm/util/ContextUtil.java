@@ -5,7 +5,7 @@ import com.qiu.ssm.context.ApplicationContext;
 /**
  * @author _qqiu
  */
-public class ContextUtil  {
+public abstract class ContextUtil  {
     private static ApplicationContext applicationContext;
 
     public static void setApplicationContext(ApplicationContext applicationContext)  {

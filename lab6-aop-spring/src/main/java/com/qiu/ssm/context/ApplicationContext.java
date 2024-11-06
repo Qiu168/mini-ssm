@@ -8,6 +8,7 @@ import com.qiu.ssm.resource.DefaultResourceLoader;
 import com.qiu.ssm.resource.ResourceHolder;
 import com.qiu.ssm.resource.ResourceLoader;
 import com.qiu.ssm.util.Assert;
+import com.qiu.ssm.util.ContextUtil;
 import com.qiu.ssm.util.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,19 +30,19 @@ public class ApplicationContext extends DefaultBeanFactory {
             scanPackage=mainClass.getPackage().getName();
         }
         context.refresh(scanPackage);
+        ContextUtil.setApplicationContext(context);
         return context;
     }
     protected void refresh(String scanPackage) throws Exception {
         //定位配置文件
         ResourceLoader resourceLoader=new DefaultResourceLoader();
         ResourceHolder.setResourceLoader(resourceLoader);
-        scanPackage(scanPackage);
-        doCreateBean();
-        log.info("refresh finish");
-    }
-    protected void scanPackage(String path) throws Exception {
-        BeanDefinitionReader reader=new BeanDefinitionReader(path);
+        BeanDefinitionReader reader=new BeanDefinitionReader(scanPackage);
+        List<Class<?>> aspectClz = reader.getAspectClz();
         List<BeanDefinition> beanDefinitions = reader.loadBeanDefinitions();
         doRegisterBeanDefinition(beanDefinitions);
+        initAspect(aspectClz);
+        doCreateBean();
+        log.info("refresh finish");
     }
 }

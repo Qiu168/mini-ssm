@@ -2,7 +2,9 @@ package com.qiu.ssm.beans.factory;
 
 import com.qiu.ssm.annotation.stereotype.Component;
 import com.qiu.ssm.beans.BeanDefinition;
+import com.qiu.ssm.beans.BeanWrapper;
 import com.qiu.ssm.beans.processor.FieldProcessor;
+import com.qiu.ssm.beans.processor.InstantiationAwareBeanPostProcessor;
 import com.qiu.ssm.util.AnnotationUtil;
 import com.qiu.ssm.util.Assert;
 import com.qiu.ssm.util.StringUtil;
@@ -10,9 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author _qiu
@@ -20,9 +22,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class DefaultBeanFactory implements BeanFactory{
     private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
-    private final Map<String, Object> factoryBeanInstanceCache = new ConcurrentHashMap<>();
+    private final Map<String, BeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<>();
     private final Map<String, Object> earlyBeanMap = new HashMap<>();
     private volatile List<FieldProcessor> fieldProcessors=null;
+    private volatile List<InstantiationAwareBeanPostProcessor> instantiationAwareBeanPostProcessors=null;
     protected void doRegisterBeanDefinition(List<BeanDefinition> beanDefinitions) throws Exception {
         for (BeanDefinition beanDefinition : beanDefinitions) {
             if (beanDefinitionMap.containsKey(beanDefinition.getFactoryBeanName())) {
@@ -32,27 +35,41 @@ public class DefaultBeanFactory implements BeanFactory{
         }
     }
     @Override
-    public Object getBean(String beanName) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public Object getBean(String beanName) throws Exception {
         //如果是单例，那么在上一次调用getBean获取该bean时已经初始化过了，拿到不为空的实例直接返回即可
-        Object instance = factoryBeanInstanceCache.get(beanName);
+        BeanWrapper instance = factoryBeanInstanceCache.get(beanName);
         if (instance != null) {
-            return instance;
+            return instance.getProxyObject();
         }
         if(earlyBeanMap.containsKey(beanName)){
             return earlyBeanMap.get(beanName);
         }
         BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
         Assert.notNull(beanDefinition,"找不到bean："+beanName);
+        List<InstantiationAwareBeanPostProcessor> postProcessorList = getBeanPostProcessors();
+        for (InstantiationAwareBeanPostProcessor beanPostProcessor : postProcessorList) {
+            beanPostProcessor.postProcessBeforeInstantiation(beanDefinition.getBeanClass(),beanName);
+        }
         //实例化Bean，放入Ioc容器
         Object o = instantiateBean(beanDefinition);
+        for (InstantiationAwareBeanPostProcessor beanPostProcessor : postProcessorList) {
+            o=beanPostProcessor.postProcessAfterInstantiation(o,beanName);
+        }
+
         //4.注入
         populateBean(o);
-        factoryBeanInstanceCache.put(beanName,o);
+        factoryBeanInstanceCache.put(beanName, (BeanWrapper) o);
         return o;
     }
 
-
-    private void populateBean(Object o) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    protected void initAspect(List<Class<?>> aspectClz){
+        //创建Aspect类
+        //
+    }
+    private void populateBean(Object o) throws Exception {
+        if(o instanceof BeanWrapper){
+            o=((BeanWrapper)o).getWrappedObject();
+        }
         Field[] fields = o.getClass().getDeclaredFields();
         List<FieldProcessor> processors = getFieldProcessors();
         for (Field field : fields) {
@@ -82,7 +99,20 @@ public class DefaultBeanFactory implements BeanFactory{
         }
         return fieldProcessors;
     }
-
+    private List<InstantiationAwareBeanPostProcessor> getBeanPostProcessors() {
+        //double check
+        if(instantiationAwareBeanPostProcessors==null){
+            synchronized (this){
+                if(instantiationAwareBeanPostProcessors==null){
+                    instantiationAwareBeanPostProcessors=new ArrayList<>();
+                    for (InstantiationAwareBeanPostProcessor beanPostProcessor : ServiceLoader.load(InstantiationAwareBeanPostProcessor.class)) {
+                        instantiationAwareBeanPostProcessors.add(beanPostProcessor);
+                    }
+                }
+            }
+        }
+        return instantiationAwareBeanPostProcessors;
+    }
     protected void doCreateBean(){
         for (Map.Entry<String, BeanDefinition> beanDefinitionEntry : beanDefinitionMap.entrySet()) {
             String beanName = beanDefinitionEntry.getKey();
@@ -95,7 +125,7 @@ public class DefaultBeanFactory implements BeanFactory{
             }
         }
     }
-    private Object instantiateBean(BeanDefinition beanDefinition) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    private Object instantiateBean(BeanDefinition beanDefinition) throws Exception {
         Class<?> clz = beanDefinition.getBeanClass();
         Constructor<?>[] constructors = clz.getConstructors();
         Assert.isTrue(constructors.length==1,"to many constructors in "+beanDefinition.getBeanClass().getName());
@@ -117,7 +147,7 @@ public class DefaultBeanFactory implements BeanFactory{
      * @param <T> bean的类型
      */
     @Override
-    public <T> T getBean(Class<T> requiredType) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T> T getBean(Class<T> requiredType) throws Exception {
         Component annotation = AnnotationUtil.getMergedAnnotation(requiredType,Component.class);
         String beanName= StringUtil.toLowerFirstCase(requiredType.getSimpleName());
         if(annotation!=null&&!"".equals(annotation.value())){
@@ -128,6 +158,6 @@ public class DefaultBeanFactory implements BeanFactory{
 
     @Override
     public List<Object> getAllBeans() {
-        return Arrays.asList(factoryBeanInstanceCache.keySet().toArray());
+        return factoryBeanInstanceCache.values().stream().map(BeanWrapper::getWrappedObject).collect(Collectors.toList());
     }
 }

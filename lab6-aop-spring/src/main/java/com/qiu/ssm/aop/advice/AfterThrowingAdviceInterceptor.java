@@ -2,6 +2,7 @@ package com.qiu.ssm.aop.advice;
 
 
 import com.qiu.ssm.aop.MethodInvocation;
+import com.qiu.ssm.util.ExceptionUtil;
 import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +33,7 @@ public class AfterThrowingAdviceInterceptor extends AbstractAspectAdvice impleme
             //异常捕捉中调用通知方法
             Throwable throwable = e;
             for (Class<? extends Throwable> exception : exceptions) {
-                throwable = getCause(e);
+                throwable = ExceptionUtil.getCause(e);
                 if (throwable.getClass() == exception) {
                     invokeAdviceMethod(mi, null, throwable);
                     break;
@@ -42,11 +43,5 @@ public class AfterThrowingAdviceInterceptor extends AbstractAspectAdvice impleme
         }
     }
 
-    private Throwable getCause(Throwable e) {
-        while (e.getClass() == InvocationTargetException.class) {
-            e = e.getCause();
-        }
-        return e;
-    }
 
 }

@@ -34,7 +34,7 @@ public class AfterThrowingAdviceInterceptor extends AbstractAspectAdvice impleme
             for (Class<? extends Throwable> exception : exceptions) {
                 throwable = getCause(e);
                 if (throwable.getClass() == exception) {
-                    invokeAdviceMethod(mi, null, e.getCause());
+                    invokeAdviceMethod(mi, null, throwable);
                     break;
                 }
             }

@@ -1,9 +1,11 @@
 package com.qiu.ssm;
 
+import com.qiu.ssm.annotation.aop.AfterThrowing;
 import com.qiu.ssm.annotation.aop.Around;
 import com.qiu.ssm.annotation.aop.Aspect;
 import com.qiu.ssm.annotation.aop.Before;
 import com.qiu.ssm.aop.*;
+import com.qiu.ssm.beans.NoSuchBeanException;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,6 +32,10 @@ public class CglibProxyTest {
             pjp.proceed();
             System.out.println("around after");
         }
+        @AfterThrowing(annotation = Log.class,throwable = NoSuchBeanException.class)
+        public void afterThrowing(Throwable throwable) {
+            System.out.println(throwable.getClass());
+        }
     }
 
 
@@ -42,6 +48,11 @@ public class CglibProxyTest {
         public void test1() {
             System.out.println("test1");
         }
+        @Log
+        public void error(){
+            System.out.println("running");
+            throw new NoSuchBeanException();
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -53,5 +64,7 @@ public class CglibProxyTest {
         test.test();
         System.out.println("-----");
         test.test1();
+        System.out.println("-----");
+        test.error();
     }
 }

@@ -1,6 +1,9 @@
 package com.qiu.ssm.aop.advice;
 
+import com.qiu.ssm.annotation.aop.Around;
 import com.qiu.ssm.aop.JoinPoint;
+import com.qiu.ssm.aop.ProceedingJoinPoint;
+import com.qiu.ssm.util.Assert;
 
 import java.lang.reflect.Method;
 
@@ -31,7 +34,10 @@ public abstract class AbstractAspectAdvice implements Advice {
         } else {
             Object[] args = new Object[paramTypes.length];
             for (int i = 0; i < paramTypes.length; i++) {
-                if (paramTypes[i] == JoinPoint.class) {
+                if(paramTypes[i]== ProceedingJoinPoint.class){
+                    Assert.notNull(aspectMethod.getAnnotation(Around.class),"method args can not be pjp unless method is Around");
+                    args[i] = joinPoint;
+                }else if (paramTypes[i] == JoinPoint.class) {
                     args[i] = joinPoint;
                 } else if (paramTypes[i] == Throwable.class) {
                     args[i] = tx;

@@ -27,7 +27,7 @@ public class MethodInvocation implements ProceedingJoinPoint {
     private final Object [] arguments;
 
     /**拦截器链*/
-    private final List<Object> interceptorsAndDynamicMethodMatchers;
+    private final List<MethodInterceptor> interceptorsAndDynamicMethodMatchers;
 
     /**记录当前拦截器执行的位置*/
     private int currentInterceptorIndex = -1;
@@ -37,7 +37,7 @@ public class MethodInvocation implements ProceedingJoinPoint {
                             Method method,
                             Object[] arguments,
                             Class<?> targetClass,
-                            List<Object> interceptorsAndDynamicMethodMatchers) {
+                            List<MethodInterceptor> interceptorsAndDynamicMethodMatchers) {
 
         this.proxy = proxy;
         this.target = target;
@@ -56,12 +56,9 @@ public class MethodInvocation implements ProceedingJoinPoint {
         if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
             return this.method.invoke(this.target,this.arguments);
         }
-
         //获取一个拦截器
-        Object interceptorOrInterceptionAdvice =
-                this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
-        if (interceptorOrInterceptionAdvice instanceof MethodInterceptor) {
-            MethodInterceptor mi = (MethodInterceptor) interceptorOrInterceptionAdvice;
+        MethodInterceptor mi = this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+        if (mi != null) {
             //执行通知方法
             return mi.invoke(this);
         } else {

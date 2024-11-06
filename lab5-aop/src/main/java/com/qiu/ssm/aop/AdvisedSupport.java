@@ -4,7 +4,10 @@ import com.qiu.ssm.aop.advice.MethodInterceptor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +15,7 @@ import java.util.Map;
  * 代理类支持
  * @author _qqiu
  */
-class AdvisedSupport {
+public class AdvisedSupport {
 
     /**
      * 被代理的类class
@@ -26,8 +29,25 @@ class AdvisedSupport {
     private Object target;
 
     /**被代理的方法对应的拦截器集合*/
-    private Map<Method, List<MethodInterceptor>> methodCache;
+    private final Map<Method, List<MethodInterceptor>> methodCache=new HashMap<>();
 
+    public AdvisedSupport(Class<?> targetClass, Object target) {
+        this.targetClass = targetClass;
+        this.target = target;
+        List<MethodInterceptor> clzAdvice=new ArrayList<>();
+        for (Annotation annotation : targetClass.getAnnotations()) {
+            //获取注解的Class对象=获取实例对象的唯一接口
+            clzAdvice.addAll(AspectParser.withinMap.getOrDefault(annotation.getClass().getInterfaces()[0],new ArrayList<>()));
+        }
+        for (Method method : targetClass.getDeclaredMethods()) {
+            List<MethodInterceptor> methodInterceptors=new ArrayList<>();
+            for (Annotation annotation : method.getAnnotations()) {
+                methodInterceptors.addAll(AspectParser.annotationMap.getOrDefault(annotation.getClass().getInterfaces()[0],new ArrayList<>()));
+            }
+            methodInterceptors.addAll(clzAdvice);
+            methodCache.put(method,methodInterceptors);
+        }
+    }
     /**
      * 获取拦截器
      */
@@ -41,7 +61,9 @@ class AdvisedSupport {
                 throw new RuntimeException(e);
             }
             cached = methodCache.get(m);
-            this.methodCache.put(m, cached);
+            if(cached!=null){
+                this.methodCache.put(method, cached);
+            }
         }
         return cached;
     }

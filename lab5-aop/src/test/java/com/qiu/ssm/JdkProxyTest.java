@@ -6,12 +6,14 @@ import com.qiu.ssm.annotation.aop.Aspect;
 import com.qiu.ssm.annotation.aop.Before;
 import com.qiu.ssm.aop.*;
 import com.qiu.ssm.beans.NoSuchBeanException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Slf4j
 public class JdkProxyTest {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -72,6 +74,10 @@ public class JdkProxyTest {
         System.out.println("------");
         test.test1();
         System.out.println("-----");
-        test.error();
+        try {
+            test.error();
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
     }
 }

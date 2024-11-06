@@ -38,10 +38,8 @@ public class ApplicationContext extends DefaultBeanFactory {
         ResourceLoader resourceLoader=new DefaultResourceLoader();
         ResourceHolder.setResourceLoader(resourceLoader);
         BeanDefinitionReader reader=new BeanDefinitionReader(scanPackage);
-        List<Class<?>> aspectClz = reader.getAspectClz();
         List<BeanDefinition> beanDefinitions = reader.loadBeanDefinitions();
         doRegisterBeanDefinition(beanDefinitions);
-        initAspect(aspectClz);
         doCreateBean();
         log.info("refresh finish");
     }

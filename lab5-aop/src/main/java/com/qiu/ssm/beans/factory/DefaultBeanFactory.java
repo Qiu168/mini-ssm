@@ -62,10 +62,6 @@ public class DefaultBeanFactory implements BeanFactory{
         return o;
     }
 
-    protected void initAspect(List<Class<?>> aspectClz){
-        //创建Aspect类
-        //
-    }
     private void populateBean(Object o) throws Exception {
         if(o instanceof BeanWrapper){
             o=((BeanWrapper)o).getWrappedObject();

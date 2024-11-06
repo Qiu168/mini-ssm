@@ -1,9 +1,11 @@
 package com.qiu.ssm;
 
+import com.qiu.ssm.annotation.aop.AfterThrowing;
 import com.qiu.ssm.annotation.aop.Around;
 import com.qiu.ssm.annotation.aop.Aspect;
 import com.qiu.ssm.annotation.aop.Before;
 import com.qiu.ssm.aop.*;
+import com.qiu.ssm.beans.NoSuchBeanException;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,11 +32,16 @@ public class JdkProxyTest {
             pjp.proceed();
             System.out.println("around after");
         }
+        @AfterThrowing(annotation = Log.class,throwable = NoSuchBeanException.class)
+        public void afterThrowing(Throwable throwable) {
+            System.out.println(throwable.getClass());
+        }
     }
 
     public interface ITest {
         void test();
         void test1();
+        void error();
     }
     @Haha
     public static class Test implements ITest {
@@ -48,6 +55,12 @@ public class JdkProxyTest {
         public void test1() {
             System.out.println("test1");
         }
+        @Log
+        @Override
+        public void error(){
+            System.out.println("running");
+            throw new NoSuchBeanException();
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -58,5 +71,7 @@ public class JdkProxyTest {
         test.test();
         System.out.println("------");
         test.test1();
+        System.out.println("-----");
+        test.error();
     }
 }

@@ -1,7 +1,5 @@
 package com.qiu.ssm.beans;
 
-
-import com.qiu.ssm.beans.loader.AspectBeanLoader;
 import com.qiu.ssm.beans.loader.BeanLoader;
 import com.qiu.ssm.util.ClassUtil;
 import lombok.Getter;
@@ -18,8 +16,6 @@ public class BeanDefinitionReader {
     private final Properties config = new Properties();
     private final List<BeanLoader> beanLoaders=new ArrayList<>();
     @Getter
-    private List<Class<?>> aspectClz;
-    @Getter
     private final Set<Class<?>> registerBeanClasses;
 
     public BeanDefinitionReader(String scanPackage) {
@@ -27,9 +23,6 @@ public class BeanDefinitionReader {
         registerBeanClasses = ClassUtil.getClassSet(scanPackage);
         ServiceLoader<BeanLoader> loaders=ServiceLoader.load(BeanLoader.class);
         for (BeanLoader loader : loaders) {
-            if(loader instanceof AspectBeanLoader){
-                aspectClz = ((AspectBeanLoader) loader).getAspectClz();
-            }
             beanLoaders.add(loader);
         }
     }

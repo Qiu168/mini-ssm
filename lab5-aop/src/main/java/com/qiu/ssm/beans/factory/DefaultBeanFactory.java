@@ -2,7 +2,6 @@ package com.qiu.ssm.beans.factory;
 
 import com.qiu.ssm.annotation.stereotype.Component;
 import com.qiu.ssm.beans.BeanDefinition;
-import com.qiu.ssm.beans.BeanWrapper;
 import com.qiu.ssm.beans.processor.FieldProcessor;
 import com.qiu.ssm.beans.processor.InstantiationAwareBeanPostProcessor;
 import com.qiu.ssm.util.AnnotationUtil;
@@ -14,7 +13,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @author _qiu
@@ -22,7 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultBeanFactory implements BeanFactory{
     private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
-    private final Map<String, BeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<>();
+    private final Map<String, Object> factoryBeanInstanceCache = new ConcurrentHashMap<>();
     private final Map<String, Object> earlyBeanMap = new HashMap<>();
     private volatile List<FieldProcessor> fieldProcessors=null;
     private volatile List<InstantiationAwareBeanPostProcessor> instantiationAwareBeanPostProcessors=null;
@@ -37,9 +35,9 @@ public class DefaultBeanFactory implements BeanFactory{
     @Override
     public Object getBean(String beanName) throws Exception {
         //如果是单例，那么在上一次调用getBean获取该bean时已经初始化过了，拿到不为空的实例直接返回即可
-        BeanWrapper instance = factoryBeanInstanceCache.get(beanName);
+        Object instance = factoryBeanInstanceCache.get(beanName);
         if (instance != null) {
-            return instance.getProxyObject();
+            return instance;
         }
         if(earlyBeanMap.containsKey(beanName)){
             return earlyBeanMap.get(beanName);
@@ -58,14 +56,11 @@ public class DefaultBeanFactory implements BeanFactory{
 
         //4.注入
         populateBean(o);
-        factoryBeanInstanceCache.put(beanName, (BeanWrapper) o);
+        factoryBeanInstanceCache.put(beanName, o);
         return o;
     }
 
     private void populateBean(Object o) throws Exception {
-        if(o instanceof BeanWrapper){
-            o=((BeanWrapper)o).getWrappedObject();
-        }
         Field[] fields = o.getClass().getDeclaredFields();
         List<FieldProcessor> processors = getFieldProcessors();
         for (Field field : fields) {
@@ -154,6 +149,6 @@ public class DefaultBeanFactory implements BeanFactory{
 
     @Override
     public List<Object> getAllBeans() {
-        return factoryBeanInstanceCache.values().stream().map(BeanWrapper::getWrappedObject).collect(Collectors.toList());
+        return new ArrayList<>(factoryBeanInstanceCache.values());
     }
 }

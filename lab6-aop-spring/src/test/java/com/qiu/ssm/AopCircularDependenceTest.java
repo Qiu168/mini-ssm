@@ -1,7 +1,9 @@
-package com.qiu.ssm.test;
+package com.qiu.ssm;
 
 import com.qiu.ssm.annotation.SpringBootApplication;
 import com.qiu.ssm.context.ApplicationContext;
+import com.qiu.ssm.test.B;
+import com.qiu.ssm.test.C;
 
 @SpringBootApplication
 public class AopCircularDependenceTest {

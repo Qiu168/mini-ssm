@@ -13,6 +13,7 @@ import java.util.Map;
 
 /**
  * 代理类支持
+ * 一个代理类对应一个AdviceSupport
  * @author _qqiu
  */
 public class AdvisedSupport {

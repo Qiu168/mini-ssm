@@ -1,8 +1,13 @@
 package com.qiu.ssm.beans.factory;
 
+import com.qiu.ssm.annotation.di.Autowired;
 import com.qiu.ssm.annotation.stereotype.Component;
+import com.qiu.ssm.aop.*;
+import com.qiu.ssm.aop.advice.AroundAdviceInterceptor;
+import com.qiu.ssm.aop.advice.MethodInterceptor;
 import com.qiu.ssm.beans.BeanDefinition;
 import com.qiu.ssm.beans.BeanWrapper;
+import com.qiu.ssm.beans.lazy.LazyBeanAspect;
 import com.qiu.ssm.beans.processor.FieldProcessor;
 import com.qiu.ssm.beans.processor.InstantiationAwareBeanPostProcessor;
 import com.qiu.ssm.util.AnnotationUtil;
@@ -12,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -42,7 +48,7 @@ public class DefaultBeanFactory implements BeanFactory{
             return instance.getProxyObject();
         }
         if(earlyBeanMap.containsKey(beanName)){
-            return earlyBeanMap.get(beanName);
+            return createLazyBean(earlyBeanMap.get(beanName).getClass());
         }
         BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
         Assert.notNull(beanDefinition,"找不到bean："+beanName);
@@ -52,24 +58,64 @@ public class DefaultBeanFactory implements BeanFactory{
         }
         //实例化Bean，放入Ioc容器
         Object o = instantiateBean(beanDefinition);
+        earlyBeanMap.put(beanDefinition.getFactoryBeanName(),o);
         for (InstantiationAwareBeanPostProcessor beanPostProcessor : postProcessorList) {
             o=beanPostProcessor.postProcessAfterInstantiation(o,beanName);
         }
-
+        BeanWrapper beanWrapper= wrapIfNecessary(o);
         //4.注入
-        populateBean(o);
-        factoryBeanInstanceCache.put(beanName, (BeanWrapper) o);
-        return o;
+        populateBean(beanWrapper);
+        factoryBeanInstanceCache.put(beanName, beanWrapper);
+        return beanWrapper.getProxyObject();
     }
 
-    protected void initAspect(List<Class<?>> aspectClz){
-        //创建Aspect类
-        //
-    }
-    private void populateBean(Object o) throws Exception {
-        if(o instanceof BeanWrapper){
-            o=((BeanWrapper)o).getWrappedObject();
+    private BeanWrapper wrapIfNecessary(Object o) {
+        AdvisedSupport advisedSupport = new AdvisedSupport(o.getClass(), o);
+        if(advisedSupport.shouldBeWrapped()){
+            CglibAopProxy cglibAopProxy=new CglibAopProxy(advisedSupport);
+            return new BeanWrapper(o,cglibAopProxy.getProxy());
         }
+        return new BeanWrapper(o,o);
+    }
+
+    protected void initAspect(List<Class<?>> aspectClz) throws Exception {
+        //创建Aspect类
+        for (Class<?> clz : aspectClz) {
+            Object instance = clz.newInstance();
+            populateLazyBean(instance);
+            factoryBeanInstanceCache.put(StringUtil.getBeanName(clz.getSimpleName()), new BeanWrapper(instance,instance));
+            AspectParser.parse(instance);
+        }
+    }
+
+    private void populateLazyBean(Object o) throws NoSuchMethodException, IllegalAccessException {
+        Field[] fields = o.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Autowired.class)) {
+                Class<?> declaringClass = field.getDeclaringClass();
+                Object proxy=createLazyBean(declaringClass);
+                boolean accessible = field.isAccessible();
+                field.setAccessible(true);
+                field.set(o, proxy);
+                field.setAccessible(accessible);
+            }
+        }
+    }
+    private Object createLazyBean(Class<?> declaringClass) throws NoSuchMethodException {
+        LazyBeanAspect lazyBeanAspect=LazyBeanAspect.getInstance();
+        Method[] declaredMethods = declaringClass.getDeclaredMethods();
+        Map<Method, List<MethodInterceptor>> map = new HashMap<>();
+        for (Method declaredMethod : declaredMethods) {
+            AroundAdviceInterceptor interceptor = new AroundAdviceInterceptor(lazyBeanAspect.getClass().getMethod("around", ProceedingJoinPoint.class), lazyBeanAspect);
+            map.put(declaredMethod, Collections.singletonList(interceptor));
+        }
+        AdvisedSupport advisedSupport = new AdvisedSupport(declaringClass, null, map);
+        CglibAopProxy cglibAopProxy = new CglibAopProxy(advisedSupport);
+        return cglibAopProxy.getProxy();
+    }
+
+    private void populateBean(BeanWrapper beanWrapper) throws Exception {
+        Object o=beanWrapper.getWrappedObject();
         Field[] fields = o.getClass().getDeclaredFields();
         List<FieldProcessor> processors = getFieldProcessors();
         for (Field field : fields) {
@@ -135,9 +181,7 @@ public class DefaultBeanFactory implements BeanFactory{
         for (int i = 0; i < parameterTypes.length; i++) {
             args[i]=getBean(parameterTypes[i]);
         }
-        Object instance = constructor.newInstance(args);
-        earlyBeanMap.put(beanDefinition.getFactoryBeanName(),instance);
-        return instance;
+        return constructor.newInstance(args);
     }
 
     /**

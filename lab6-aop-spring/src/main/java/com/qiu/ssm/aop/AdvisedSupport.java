@@ -29,11 +29,12 @@ public class AdvisedSupport {
     private Object target;
 
     /**被代理的方法对应的拦截器集合*/
-    private final Map<Method, List<MethodInterceptor>> methodCache=new HashMap<>();
+    private final Map<Method, List<MethodInterceptor>> methodCache;
 
     public AdvisedSupport(Class<?> targetClass, Object target) {
         this.targetClass = targetClass;
         this.target = target;
+        this.methodCache = new HashMap<>();
         List<MethodInterceptor> clzAdvice=new ArrayList<>();
         for (Annotation annotation : targetClass.getAnnotations()) {
             //获取注解的Class对象=获取实例对象的唯一接口
@@ -45,9 +46,20 @@ public class AdvisedSupport {
                 methodInterceptors.addAll(AspectParser.annotationMap.getOrDefault(annotation.getClass().getInterfaces()[0],new ArrayList<>()));
             }
             methodInterceptors.addAll(clzAdvice);
-            methodCache.put(method,methodInterceptors);
+            if(methodInterceptors.size()!=0){
+                methodCache.put(method,methodInterceptors);
+            }
         }
     }
+    public boolean shouldBeWrapped(){
+        return !methodCache.isEmpty();
+    }
+    public AdvisedSupport(Class<?> targetClass, Object target, Map<Method, List<MethodInterceptor>> methodCache) {
+        this.targetClass = targetClass;
+        this.target = target;
+        this.methodCache = methodCache;
+    }
+
     /**
      * 获取拦截器
      */

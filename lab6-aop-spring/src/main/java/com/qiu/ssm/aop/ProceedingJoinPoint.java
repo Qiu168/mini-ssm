@@ -5,5 +5,6 @@ package com.qiu.ssm.aop;
  * @author _qqiu
  */
 public interface ProceedingJoinPoint extends JoinPoint{
-    public Object proceed() throws Throwable;
+    Object proceed() throws Throwable;
+    void setTarget(Object target);
 }

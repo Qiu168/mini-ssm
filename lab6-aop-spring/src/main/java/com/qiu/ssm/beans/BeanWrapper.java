@@ -1,6 +1,7 @@
 package com.qiu.ssm.beans;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
@@ -9,14 +10,11 @@ import lombok.Data;
  * @author _qiu
  */
 @Data
+@AllArgsConstructor
 public class BeanWrapper {
     /**
      * Bean的实例化对象
      */
     private Object wrappedObject;
     private Object proxyObject;
-    public BeanWrapper(Object wrappedObject) {
-        this.wrappedObject = wrappedObject;
-    }
-
 }

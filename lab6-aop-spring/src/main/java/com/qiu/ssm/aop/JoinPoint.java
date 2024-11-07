@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
  */
 public interface JoinPoint {
     Object getTarget();
-
+    Class<?> getTargetClass();
     Object[] getArguments();
 
     Method getMethod();

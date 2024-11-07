@@ -2,6 +2,8 @@ package com.qiu.ssm.aop;
 
 
 import com.qiu.ssm.aop.advice.MethodInterceptor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -15,15 +17,20 @@ public class MethodInvocation implements ProceedingJoinPoint {
     private final Object proxy;
 
     /**被代理对象的class*/
+    @Getter
     private final Class<?> targetClass;
 
     /**被代理的对象*/
-    private final Object target;
+    @Getter
+    @Setter
+    private Object target;
 
     /**被代理的方法*/
+    @Getter
     private final Method method;
 
     /**被代理的方法的入参*/
+    @Getter
     private final Object [] arguments;
 
     /**拦截器链*/
@@ -67,18 +74,4 @@ public class MethodInvocation implements ProceedingJoinPoint {
         }
     }
 
-    @Override
-    public Object getTarget() {
-        return this.target;
-    }
-
-    @Override
-    public Object[] getArguments() {
-        return this.arguments;
-    }
-
-    @Override
-    public Method getMethod() {
-        return this.method;
-    }
 }

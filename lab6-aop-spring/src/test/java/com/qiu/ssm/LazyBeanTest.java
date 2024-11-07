@@ -22,6 +22,11 @@ public class LazyBeanTest {
         A lazyBean = (A) createLazyBean(A.class);
         lazyBean.test();
     }
+
+    /**
+     * copy from DefaultBeanFactory
+     * @see com.qiu.ssm.beans.factory.DefaultBeanFactory#createLazyBean(Class)
+     */
     private static Object createLazyBean(Class<?> declaringClass) throws NoSuchMethodException {
         LazyBeanAspect lazyBeanAspect=LazyBeanAspect.getInstance();
         Method[] declaredMethods = declaringClass.getDeclaredMethods();

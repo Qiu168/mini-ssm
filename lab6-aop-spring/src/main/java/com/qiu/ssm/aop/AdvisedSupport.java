@@ -10,6 +10,7 @@ import java.util.*;
 
 /**
  * 代理类支持
+ * 一个代理类对应一个AdviceSupport
  * @author _qqiu
  */
 public class AdvisedSupport {
@@ -43,7 +44,7 @@ public class AdvisedSupport {
                 methodInterceptors.addAll(AspectParser.annotationMap.getOrDefault(annotation.getClass().getInterfaces()[0],new ArrayList<>()));
             }
             methodInterceptors.addAll(clzAdvice);
-            if(methodInterceptors.size()!=0){
+            if(!methodInterceptors.isEmpty()){
                 methodCache.put(method,methodInterceptors);
             }
         }

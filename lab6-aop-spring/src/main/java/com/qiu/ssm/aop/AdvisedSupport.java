@@ -6,10 +6,7 @@ import lombok.Setter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 代理类支持
@@ -76,6 +73,9 @@ public class AdvisedSupport {
             if(cached!=null){
                 this.methodCache.put(method, cached);
             }
+        }
+        if(cached==null){
+            cached= Collections.emptyList();
         }
         return cached;
     }

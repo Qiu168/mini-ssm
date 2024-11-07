@@ -19,24 +19,7 @@ import java.util.Map;
 public class LazyBeanTest {
     public static void main(String[] args) throws Exception {
         ApplicationContext context = ApplicationContext.run(AopTest.class);
-        A lazyBean = (A) createLazyBean(A.class);
+        A lazyBean = (A) LazyBeanAspect.createLazyBean(A.class);
         lazyBean.test();
-    }
-
-    /**
-     * copy from DefaultBeanFactory
-     * @see com.qiu.ssm.beans.factory.DefaultBeanFactory#createLazyBean(Class)
-     */
-    private static Object createLazyBean(Class<?> declaringClass) throws NoSuchMethodException {
-        LazyBeanAspect lazyBeanAspect=LazyBeanAspect.getInstance();
-        Method[] declaredMethods = declaringClass.getDeclaredMethods();
-        Map<Method, List<MethodInterceptor>> map = new HashMap<>();
-        for (Method declaredMethod : declaredMethods) {
-            AroundAdviceInterceptor interceptor = new AroundAdviceInterceptor(lazyBeanAspect.getClass().getMethod("around", ProceedingJoinPoint.class), lazyBeanAspect);
-            map.put(declaredMethod, Collections.singletonList(interceptor));
-        }
-        AdvisedSupport advisedSupport = new AdvisedSupport(declaringClass, null, map);
-        CglibAopProxy cglibAopProxy = new CglibAopProxy(advisedSupport);
-        return cglibAopProxy.getProxy();
     }
 }
